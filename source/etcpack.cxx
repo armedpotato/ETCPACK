@@ -456,12 +456,14 @@ bool readSrcFile(char *filename,uint8 *&img,int &width,int &height, int &expande
 	int w1,h1;
 	int wdiv4, hdiv4;
 	char str[255];
-
+    char tempPPMFileName[255] = {0};
+    strcpy(tempPPMFileName, filename);
+    strcpy(&tempPPMFileName[strlen(tempPPMFileName)], ".tmp.ppm");
 
 	// Delete temp file if it exists.
-	if(fileExist("tmp.ppm"))
+	if(fileExist(tempPPMFileName))
 	{
-		sprintf(str, "del tmp.ppm\n");
+		sprintf(str, "rm \'%s\'\n", tempPPMFileName);
 		system(str);
 	}
 
@@ -469,8 +471,10 @@ bool readSrcFile(char *filename,uint8 *&img,int &width,int &height, int &expande
 	if(!strcmp(&filename[q],".ppm")) 
 	{
 		// Already a .ppm file. Just copy. 
-		sprintf(str,"copy %s tmp.ppm \n", filename);
-		printf("Copying source file to tmp.ppm\n", filename);
+		sprintf(str,"copy \'%s\' \'%s\' \n", filename, tempPPMFileName);
+        char temp[1024];
+        sprintf(temp, "Copying source file to %s\n", tempPPMFileName);
+		printf(temp);
 	}
 	else
 	{
@@ -480,22 +484,28 @@ bool readSrcFile(char *filename,uint8 *&img,int &width,int &height, int &expande
 		// for instance Image Magick. Just make sure the syntax can
 		// be written as below:
 		// 
-		// C:\imconv source.jpg dest.ppm
+		// C:\convert source.jpg dest.ppm
 		//
-		sprintf(str,"imconv %s tmp.ppm\n", filename);
-		printf("Converting source file from %s to .ppm\n", filename);
+		sprintf(str,"convert \'%s\' \'%s\'\n", filename, tempPPMFileName);
+        char temp[1024];
+        sprintf(temp, "Converting source file from %s to %s\n", filename, tempPPMFileName);
+		printf(temp);
 	}
 	// Execute system call
 	system(str);
 
 	int bitrate=8;
 	if(format==ETC2PACKAGE_RG_NO_MIPMAPS)
+    {
 		bitrate=16;
-	if(fReadPPM("tmp.ppm",w1,h1,img,bitrate))
+    }
+	if(fReadPPM(tempPPMFileName,w1,h1,img,bitrate))
 	{
 		width=w1;
 		height=h1;
-		system("del tmp.ppm");
+        char temp[1024];
+        sprintf(temp, "rm \'%s\'\n", tempPPMFileName);
+		system(temp);
 
 		// Width must be divisible by 4 and height must be
 		// divisible by 4. Otherwise, we will expand the image
@@ -540,7 +550,7 @@ bool readSrcFile(char *filename,uint8 *&img,int &width,int &height, int &expande
 	}
 	else
 	{
-		printf("Could not read tmp.ppm file\n");
+		printf("Could not read *.ppm file\n");
 		exit(1);	
 	}
 	return false;
@@ -554,12 +564,14 @@ bool readSrcFileNoExpand(char *filename,uint8 *&img,int &width,int &height)
 {
 	int w1,h1;
 	char str[255];
-
+    char tempPPMFileName[255] = {0};
+    strcpy(tempPPMFileName, filename);
+    strcpy(&tempPPMFileName[strlen(tempPPMFileName)], ".tmp.ppm");
 
 	// Delete temp file if it exists.
-	if(fileExist("tmp.ppm"))
+	if(fileExist(tempPPMFileName))
 	{
-		sprintf(str, "del tmp.ppm\n");
+		sprintf(str, "rm \'%s\'\n", tempPPMFileName);
 		system(str);
 	}
 
@@ -568,7 +580,7 @@ bool readSrcFileNoExpand(char *filename,uint8 *&img,int &width,int &height)
 	if(!strcmp(&filename[q],".ppm")) 
 	{
 		// Already a .ppm file. Just copy. 
-		sprintf(str,"copy %s tmp.ppm \n", filename);
+		sprintf(str,"copy \'%s\' \'%s\' \n", filename, tempPPMFileName);
 		printf("Copying source file to tmp.ppm\n", filename);
 	}
 	else
@@ -579,19 +591,21 @@ bool readSrcFileNoExpand(char *filename,uint8 *&img,int &width,int &height)
 		// for instance Image Magick. Just make sure the syntax can
 		// be written as below:
 		// 
-		// C:\imconv source.jpg dest.ppm
+		// C:\convert source.jpg dest.ppm
 		//
-		sprintf(str,"imconv %s tmp.ppm\n", filename);
+		sprintf(str,"convert \'%s\' \'%s\'\n", filename, tempPPMFileName);
 //		printf("Converting source file from %s to .ppm\n", filename);
 	}
 	// Execute system call
 	system(str);
 
-	if(fReadPPM("tmp.ppm",w1,h1,img,8))
+	if(fReadPPM(tempPPMFileName,w1,h1,img,8))
 	{
 		width=w1;
 		height=h1;
-		system("del tmp.ppm");
+        char temp[1024];
+        sprintf(temp, "rm \'%s\'\n", tempPPMFileName);
+        system(temp);
 
 		return true;
 	}
@@ -9454,25 +9468,44 @@ void uncompressFile(char *srcfile, uint8* &img, uint8 *&alphaimg, int& active_wi
 void writeOutputFile(char *dstfile, uint8* img, uint8* alphaimg, int width, int height) 
 {
 	char str[300];
-
-	if(format!=ETC2PACKAGE_R_NO_MIPMAPS&&format!=ETC2PACKAGE_RG_NO_MIPMAPS) 
+    
+    char tempPPMFileName[255] = {0};
+    strcpy(tempPPMFileName, dstfile);
+    strcpy(&tempPPMFileName[strlen(tempPPMFileName)], ".tmp.ppm");
+    
+    char tempPGMFileName[255] = {0};
+    strcpy(tempPGMFileName, dstfile);
+    strcpy(&tempPGMFileName[strlen(tempPGMFileName)], ".alphaout.pgm");
+    
+	if(format!=ETC2PACKAGE_R_NO_MIPMAPS&&format!=ETC2PACKAGE_RG_NO_MIPMAPS)
 	{
-		fWritePPM("tmp.ppm",width,height,img,8,false);
+		fWritePPM(tempPPMFileName,width,height,img,8,false);
+        
+        char temp[1024];
+        sprintf(temp, "Saved file %s \n\n", tempPPMFileName);
 		printf("Saved file tmp.ppm \n\n");
 	}
 	else if(format==ETC2PACKAGE_RG_NO_MIPMAPS) 
 	{
-		fWritePPM("tmp.ppm",width,height,img,16,false);
+		fWritePPM(tempPPMFileName,width,height,img,16,false);
+        
+        char temp[1024];
+        sprintf(temp, "Saved file %s \n\n", tempPPMFileName);
+        printf("Saved file tmp.ppm \n\n");
 	}
 	if(format==ETC2PACKAGE_RGBA_NO_MIPMAPS||format==ETC2PACKAGE_RGBA1_NO_MIPMAPS||format==ETC2PACKAGE_sRGBA_NO_MIPMAPS||format==ETC2PACKAGE_sRGBA1_NO_MIPMAPS)
-		fWritePGM("alphaout.pgm",width,height,alphaimg,false,8);
+    {
+		fWritePGM(tempPGMFileName,width,height,alphaimg,false,8);
+    }
 	if(format==ETC2PACKAGE_R_NO_MIPMAPS)
-		fWritePGM("alphaout.pgm",width,height,alphaimg,false,16);
+    {
+		fWritePGM(tempPGMFileName,width,height,alphaimg,false,16);
+    }
 
 	// Delete destination file if it exists
 	if(fileExist(dstfile))
 	{
-		sprintf(str, "del %s\n",dstfile);	
+		sprintf(str, "rm %s\n",dstfile);
 		system(str);
 	}
 
@@ -9491,7 +9524,7 @@ void writeOutputFile(char *dstfile, uint8* img, uint8* alphaimg, int width, int 
 		// for instance Image Magick. Just make sure the syntax can
 		// be written as below:
 		// 
-		// C:\imconv source.ppm dest.jpg
+		// C:\convert source.ppm dest.jpg
 		//
 		if(format==ETC2PACKAGE_RGBA_NO_MIPMAPS||format==ETC2PACKAGE_RGBA1_NO_MIPMAPS||format==ETC2PACKAGE_sRGBA_NO_MIPMAPS||format==ETC2PACKAGE_sRGBA1_NO_MIPMAPS) 
 		{
@@ -9503,8 +9536,8 @@ void writeOutputFile(char *dstfile, uint8* img, uint8* alphaimg, int width, int 
             int rw, rh;
             unsigned char *pixelsRGB;
             unsigned char *pixelsA;
-			fReadPPM("tmp.ppm", rw, rh, pixelsRGB, 8);
-            fReadPGM("alphaout.pgm", rw, rh, pixelsA, 8);
+			fReadPPM(tempPPMFileName, rw, rh, pixelsRGB, 8);
+            fReadPGM(tempPGMFileName, rw, rh, pixelsA, 8);
 			fWriteTGAfromRGBandA(dstfile, rw, rh, pixelsRGB, pixelsA, true);
             free(pixelsRGB);
             free(pixelsA);
@@ -9512,12 +9545,12 @@ void writeOutputFile(char *dstfile, uint8* img, uint8* alphaimg, int width, int 
 		}
 		else if(format==ETC2PACKAGE_R_NO_MIPMAPS) 
 		{
-			sprintf(str,"imconv alphaout.pgm %s\n",dstfile);
+			sprintf(str,"convert alphaout.pgm %s\n",dstfile);
 			printf("Converting destination file from .pgm to %s\n",dstfile);
 		}
 		else 
 		{
-			sprintf(str,"imconv tmp.ppm %s\n",dstfile);
+			sprintf(str,"convert tmp.ppm %s\n",dstfile);
 			printf("Converting destination file from .ppm to %s\n",dstfile);
 		}
 	}
@@ -15882,7 +15915,7 @@ void compressFile(char *srcfile,char *dstfile)
 	uint8 *srcimg;
 	int width,height;
 	int extendedwidth, extendedheight;
-	struct _timeb tstruct;
+	time_t tstruct;
 	int tstart;
 	int tstop;
 	// 0: compress from .any to .pkm with SPEED_FAST, METRIC_NONPERCEPTUAL, ETC 
@@ -15942,7 +15975,7 @@ void compressFile(char *srcfile,char *dstfile)
 			{
 				char str[300];
 				//printf("reading alpha channel....");
-				sprintf(str,"imconv %s -alpha extract alpha.pgm\n",srcfile);
+				sprintf(str,"convert %s -alpha extract alpha.pgm\n",srcfile);
 				system(str);
 				readAlpha(alphaimg,width,height,extendedwidth,extendedheight);
 				printf("ok!\n");
@@ -15951,7 +15984,7 @@ void compressFile(char *srcfile,char *dstfile)
 			else if(format==ETC2PACKAGE_R_NO_MIPMAPS) 
 			{
 				char str[300];
-				sprintf(str,"imconv %s alpha.pgm\n",srcfile);
+				sprintf(str,"convert %s alpha.pgm\n",srcfile);
 				system(str);
 				readAlpha(alphaimg,width,height,extendedwidth,extendedheight);
 				printf("read alpha ok, size is %d,%d (%d,%d)",width,height,extendedwidth,extendedheight);
@@ -15960,12 +15993,12 @@ void compressFile(char *srcfile,char *dstfile)
 			printf("Compressing...\n");
 
 			tstart=time(NULL);
-			_ftime( &tstruct );
-			tstart=tstart*1000+tstruct.millitm;
-			compressImageFile(srcimg,alphaimg,width,height,dstfile,extendedwidth, extendedheight);			
+			time( &tstruct );
+//			tstart=tstart*1000+tstruct.millitm;
+			compressImageFile(srcimg,alphaimg,width,height,dstfile,extendedwidth, extendedheight);
 			tstop = time(NULL);
-			_ftime( &tstruct );
-			tstop = tstop*1000+tstruct.millitm;
+			time( &tstruct );
+//			tstop = tstop*1000+tstruct.millitm;
 			printf( "It took %u milliseconds to compress:\n", tstop - tstart);
 			calculatePSNRfile(dstfile,srcimg,alphaimg);
 		}
