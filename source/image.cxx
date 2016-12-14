@@ -55,6 +55,9 @@
 // Remove warnings for conversions between different time variables
 #pragma warning(disable : 4244)
 
+static const int MAX_PATH = 1024;
+static const int BUFFER_MAX_SIZE = MAX_PATH * 4;
+
 // Removes comments in a .ppm file
 // (i.e., lines starting with #)
 // NO WARRANTY --- SEE STATEMENT IN TOP OF FILE (C) Ericsson AB 2005-2013. All Rights Reserved.
@@ -108,7 +111,7 @@ bool fReadPPM(char *filename, int &width, int &height, unsigned char *&pixels, i
 
 	if(f1)
 	{
-		char line[255];
+		char line[MAX_PATH];
 
 		removeSpaces(f1);
 		removeComments(f1);

@@ -53,6 +53,9 @@
 #include <sys/timeb.h>
 #include "image.h"
 
+static const int MAX_PATH = 1024;
+static const int BUFFER_MAX_SIZE = MAX_PATH * 4;
+
 // Typedefs
 typedef unsigned char uint8;
 typedef unsigned short uint16;
@@ -455,8 +458,8 @@ bool readSrcFile(char *filename,uint8 *&img,int &width,int &height, int &expande
 {
 	int w1,h1;
 	int wdiv4, hdiv4;
-	char str[255];
-    char tempPPMFileName[255] = {0};
+	char str[MAX_PATH];
+    char tempPPMFileName[MAX_PATH] = {0};
     strcpy(tempPPMFileName, filename);
     strcpy(&tempPPMFileName[strlen(tempPPMFileName)], ".tmp.ppm");
 
@@ -472,7 +475,7 @@ bool readSrcFile(char *filename,uint8 *&img,int &width,int &height, int &expande
 	{
 		// Already a .ppm file. Just copy. 
 		sprintf(str,"copy \'%s\' \'%s\' \n", filename, tempPPMFileName);
-        char temp[1024];
+        char temp[BUFFER_MAX_SIZE];
         sprintf(temp, "Copying source file to %s\n", tempPPMFileName);
 		printf(temp);
 	}
@@ -487,7 +490,7 @@ bool readSrcFile(char *filename,uint8 *&img,int &width,int &height, int &expande
 		// C:\convert source.jpg dest.ppm
 		//
 		sprintf(str,"convert \'%s\' \'%s\'\n", filename, tempPPMFileName);
-        char temp[1024];
+        char temp[BUFFER_MAX_SIZE];
         sprintf(temp, "Converting source file from %s to %s\n", filename, tempPPMFileName);
 		printf(temp);
 	}
@@ -503,7 +506,7 @@ bool readSrcFile(char *filename,uint8 *&img,int &width,int &height, int &expande
 	{
 		width=w1;
 		height=h1;
-        char temp[1024];
+        char temp[BUFFER_MAX_SIZE];
         sprintf(temp, "rm \'%s\'\n", tempPPMFileName);
 		system(temp);
 
@@ -563,8 +566,8 @@ bool readSrcFile(char *filename,uint8 *&img,int &width,int &height, int &expande
 bool readSrcFileNoExpand(char *filename,uint8 *&img,int &width,int &height)
 {
 	int w1,h1;
-	char str[255];
-    char tempPPMFileName[255] = {0};
+	char str[MAX_PATH];
+    char tempPPMFileName[MAX_PATH] = {0};
     strcpy(tempPPMFileName, filename);
     strcpy(&tempPPMFileName[strlen(tempPPMFileName)], ".tmp.ppm");
 
@@ -603,7 +606,7 @@ bool readSrcFileNoExpand(char *filename,uint8 *&img,int &width,int &height)
 	{
 		width=w1;
 		height=h1;
-        char temp[1024];
+        char temp[BUFFER_MAX_SIZE];
         sprintf(temp, "rm \'%s\'\n", tempPPMFileName);
         system(temp);
 
@@ -9469,11 +9472,11 @@ void writeOutputFile(char *dstfile, uint8* img, uint8* alphaimg, int width, int 
 {
 	char str[300];
     
-    char tempPPMFileName[255] = {0};
+    char tempPPMFileName[MAX_PATH] = {0};
     strcpy(tempPPMFileName, dstfile);
     strcpy(&tempPPMFileName[strlen(tempPPMFileName)], ".tmp.ppm");
     
-    char tempPGMFileName[255] = {0};
+    char tempPGMFileName[MAX_PATH] = {0};
     strcpy(tempPGMFileName, dstfile);
     strcpy(&tempPGMFileName[strlen(tempPGMFileName)], ".alphaout.pgm");
     
@@ -9481,7 +9484,7 @@ void writeOutputFile(char *dstfile, uint8* img, uint8* alphaimg, int width, int 
 	{
 		fWritePPM(tempPPMFileName,width,height,img,8,false);
         
-        char temp[1024];
+        char temp[BUFFER_MAX_SIZE];
         sprintf(temp, "Saved file %s \n\n", tempPPMFileName);
 		printf("Saved file tmp.ppm \n\n");
 	}
@@ -9489,7 +9492,7 @@ void writeOutputFile(char *dstfile, uint8* img, uint8* alphaimg, int width, int 
 	{
 		fWritePPM(tempPPMFileName,width,height,img,16,false);
         
-        char temp[1024];
+        char temp[BUFFER_MAX_SIZE];
         sprintf(temp, "Saved file %s \n\n", tempPPMFileName);
         printf("Saved file tmp.ppm \n\n");
 	}
